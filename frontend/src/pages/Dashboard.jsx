@@ -12,6 +12,8 @@ import {
   DialogContent,
   useMediaQuery,
   useTheme,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
@@ -30,13 +32,15 @@ const Dashboard = () => {
   const [accounts, setAccounts] = useState([]);
   const [openForm, setOpenForm] = useState(false);
   const [filters, setFilters] = useState({
-    month: new Date().getMonth() + 1,
-    year: new Date().getFullYear(),
+    month: '',
+    year: '',
     transactionType: '',
     category: '',
-    accountId: ''
+    accountId: '',
+    description: ''
   });
   const [loading, setLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   // Load initial data
   useEffect(() => {
@@ -63,12 +67,14 @@ const Dashboard = () => {
       if (filters.transactionType) params.append('transaction_type', filters.transactionType);
       if (filters.category) params.append('category', filters.category);
       if (filters.accountId) params.append('account_id', filters.accountId);
+      if (filters.description) params.append('description', filters.description);
 
       const response = await fetch(`http://localhost:8000/transactions/?${params}`);
       const data = await response.json();
       setTransactions(data);
     } catch (error) {
       console.error('Erro ao carregar transações:', error);
+      showSnackbar('Erro ao carregar transações', 'error');
     } finally {
       setLoading(false);
     }
@@ -78,10 +84,63 @@ const Dashboard = () => {
     setOpenForm(false);
     loadTransactions();
     loadAccounts(); // Reload accounts to update balances
+    showSnackbar('Transação criada com sucesso!', 'success');
+  };
+
+  const handleTransactionUpdate = async (transactionId, updateData) => {
+    try {
+      const response = await fetch(`http://localhost:8000/transactions/${transactionId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar transação');
+      }
+
+      loadTransactions();
+      loadAccounts();
+      showSnackbar('Transação atualizada com sucesso!', 'success');
+    } catch (error) {
+      console.error('Erro ao atualizar transação:', error);
+      showSnackbar('Erro ao atualizar transação', 'error');
+      throw error;
+    }
+  };
+
+  const handleTransactionDelete = async (transactionId) => {
+    try {
+      const response = await fetch(`http://localhost:8000/transactions/${transactionId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao excluir transação');
+      }
+
+      loadTransactions();
+      loadAccounts();
+      showSnackbar('Transação excluída com sucesso!', 'success');
+    } catch (error) {
+      console.error('Erro ao excluir transação:', error);
+      showSnackbar('Erro ao excluir transação', 'error');
+      throw error;
+    }
   };
 
   const handleFiltersChange = (newFilters) => {
     setFilters({ ...filters, ...newFilters });
+  };
+
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
   };
 
   return (
@@ -135,6 +194,8 @@ const Dashboard = () => {
               transactions={transactions} 
               accounts={accounts}
               loading={loading}
+              onTransactionUpdate={handleTransactionUpdate}
+              onTransactionDelete={handleTransactionDelete}
             />
           </Grid>
         </Grid>
@@ -173,6 +234,18 @@ const Dashboard = () => {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 };

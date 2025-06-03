@@ -9,8 +9,14 @@ import {
   MenuItem,
   Grid,
   Box,
+  TextField,
+  Button,
+  IconButton,
 } from '@mui/material';
-import FilterListIcon from '@mui/icons-material/FilterList';
+import { 
+  FilterList as FilterListIcon,
+  Clear as ClearIcon,
+} from '@mui/icons-material';
 
 const Filters = ({ filters, onFiltersChange, accounts }) => {
   const currentYear = new Date().getFullYear();
@@ -49,18 +55,57 @@ const Filters = ({ filters, onFiltersChange, accounts }) => {
     onFiltersChange({ [field]: event.target.value });
   };
 
+  const handleClearFilters = () => {
+    onFiltersChange({
+      month: '',
+      year: '',
+      transactionType: '',
+      category: '',
+      accountId: '',
+      description: ''
+    });
+  };
+
+  const hasActiveFilters = Object.values(filters).some(value => value !== '' && value !== null && value !== undefined);
+
   return (
     <Card>
       <CardContent>
-        <Box display="flex" alignItems="center" mb={3}>
-          <FilterListIcon sx={{ mr: 1 }} color="primary" />
-          <Typography variant="h6">
-            Filtros
-          </Typography>
+        <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+          <Box display="flex" alignItems="center">
+            <FilterListIcon sx={{ mr: 1 }} color="primary" />
+            <Typography variant="h6">
+              Filtros
+            </Typography>
+          </Box>
+          
+          {hasActiveFilters && (
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<ClearIcon />}
+              onClick={handleClearFilters}
+              color="secondary"
+            >
+              Limpar Filtros
+            </Button>
+          )}
         </Box>
 
         <Grid container spacing={2}>
           <Grid item xs={12}>
+            <TextField
+              fullWidth
+              size="small"
+              label="Pesquisar por descrição"
+              variant="outlined"
+              value={filters.description || ''}
+              onChange={handleFilterChange('description')}
+              placeholder="Digite para pesquisar..."
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
             <FormControl fullWidth size="small">
               <InputLabel>Mês</InputLabel>
               <Select
@@ -78,7 +123,7 @@ const Filters = ({ filters, onFiltersChange, accounts }) => {
             </FormControl>
           </Grid>
 
-          <Grid item xs={12}>
+          <Grid item xs={12} sm={6}>
             <FormControl fullWidth size="small">
               <InputLabel>Ano</InputLabel>
               <Select
@@ -96,7 +141,7 @@ const Filters = ({ filters, onFiltersChange, accounts }) => {
             </FormControl>
           </Grid>
 
-          <Grid item xs={12}>
+          <Grid item xs={12} sm={6}>
             <FormControl fullWidth size="small">
               <InputLabel>Tipo</InputLabel>
               <Select
@@ -111,7 +156,7 @@ const Filters = ({ filters, onFiltersChange, accounts }) => {
             </FormControl>
           </Grid>
 
-          <Grid item xs={12}>
+          <Grid item xs={12} sm={6}>
             <FormControl fullWidth size="small">
               <InputLabel>Categoria</InputLabel>
               <Select
